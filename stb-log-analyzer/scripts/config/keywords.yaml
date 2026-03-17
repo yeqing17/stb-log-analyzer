@@ -1,0 +1,217 @@
+# Keywords Configuration
+# 关键词配置 - 用于脚本自动匹配
+
+# Homed 平台登录 (前置条件)
+# Launcher APK 启动后首先需要完成 Homed 平台登录
+homed:
+  tags:
+    - ServiceHelper
+    - HomedDataSourceManager
+    - StbApp
+  patterns:
+    - name: homed_login_success
+      regex: "ServiceHelper.*response.*account/login"
+      severity: info
+      description: "Homed 平台登录响应"
+
+    - name: homed_user_list_success
+      regex: "ServiceHelper.*response.*account/user/get_list"
+      severity: info
+      description: "Homed 用户列表获取成功"
+
+    - name: homed_api_success
+      regex: "monitorAPIResponse onResponse success=true"
+      severity: info
+      description: "Homed API 响应成功"
+
+    - name: homed_not_login
+      regex: "not login.*skp|HomedDataSourceManager.*not login"
+      severity: warning
+      description: "Homed 未登录"
+
+# CBN / 国网 SDK (登录相关)
+# 注意: USB Dongle 与 CBN 登录是独立的两个模块，不接 Dongle 也可以成功登录 CBN
+# 前置条件: Homed 平台登录成功
+cbn:
+  tags:
+    - CBN_UI_SDK
+    - CBN-sdk
+    - GwSDK
+  patterns:
+    - name: login_params_unresolved
+      regex: "loginParams.*\\$\\(func://"
+      severity: warning
+      description: "登录参数未解析"
+
+    - name: data_init_fail
+      regex: "onGetTabCardsError|数据初始化失败"
+      severity: error
+      description: "数据初始化失败"
+
+    - name: home_not_exist
+      regex: "HomeDataManager.*不存在|HomeDataManager.*失败"
+      severity: warning
+      description: "首页数据不存在"
+
+    - name: login_success
+      regex: "CBNSdk\\.init onLoginSuccess"
+      severity: info
+      description: "国网 SDK 登录成功"
+
+    - name: tabcards_success
+      regex: "onGetTabCards list\\.size:\\d+"
+      severity: info
+      description: "TabCards 数据获取成功"
+
+# USB Dongle (独立模块，与 CBN 登录无直接关联)
+dongle:
+  tags:
+    - DongleManager
+    - DongleProtocol
+  patterns:
+    - name: usb_dongle_fail
+      regex: "DongleManager.*openUsbDevice ret = -1"
+      severity: error
+      description: "USB 加密狗打开失败"
+
+    - name: dongle_not_found
+      regex: "DongleManager.*can not find device"
+      severity: error
+      description: "USB 设备未找到"
+
+    - name: ca_info_null
+      regex: "oid=null.*caid=null|caid=null.*oid=null"
+      severity: error
+      description: "CA 卡信息为空"
+
+    - name: device_auth_ok
+      regex: "deviceAuth true"
+      severity: info
+      description: "设备认证通过"
+
+# HDMI
+hdmi:
+  tags:
+    - aml_hal_core_detect
+    - tvhalServer
+    - tvhal_client
+  patterns:
+    - name: hdmi_plug_in
+      regex: "HDMI.*plug in|status:plug in"
+      severity: info
+      description: "HDMI 设备连接"
+
+    - name: hdmi_plug_out
+      regex: "HDMI.*plug out|status:plug out"
+      severity: info
+      description: "HDMI 设备断开"
+
+# Audio
+audio:
+  tags:
+    - audio_hw_primary
+    - AudioTrack
+    - AudioFlinger
+  patterns:
+    - name: audio_underrun
+      regex: "audio.*underrun"
+      severity: warning
+      description: "音频缓冲区欠载"
+
+    - name: audio_fail
+      regex: "audio.*(fail|error)"
+      severity: error
+      description: "音频失败"
+
+# Network
+network:
+  tags:
+    - NET_SDK
+    - NetworkSpeedMonitor
+  patterns:
+    - name: connect_timeout
+      regex: "timeout.*(connect|connection)"
+      severity: warning
+      description: "连接超时"
+
+    - name: network_disconnect
+      regex: "disconnect|disconnected"
+      severity: warning
+      description: "网络断开"
+
+# Crash
+crash:
+  patterns:
+    - name: native_crash
+      regex: "\\*\\*\\*.*Build fingerprint"
+      severity: critical
+      description: "Native 崩溃"
+
+    - name: anr
+      regex: "ANR in\\s+(\\S+)"
+      severity: critical
+      description: "应用无响应"
+
+    - name: java_exception
+      regex: "(Exception|Error):"
+      severity: error
+      description: "Java 异常"
+
+# Performance
+performance:
+  patterns:
+    - name: cpu_temp
+      regex: "CPU temperatures:\\s*\\[([\\d.]+)\\]"
+      severity: info
+      description: "CPU 温度"
+
+    - name: frame_drop
+      regex: "skipped\\s+(\\d+)\\s+frames"
+      severity: warning
+      description: "掉帧"
+
+    - name: thermal_throttle
+      regex: "thermal.*(high|warning|throttle)"
+      severity: warning
+      description: "过热降频"
+
+# 案例索引
+cases:
+  - id: case_001
+    name: CBN 登录失败 (Dongle 问题导致)
+    file: case_001_cbn_login_fail.md
+    note: "本案例中登录失败与 Dongle 问题同时发生，但 Dongle 问题不是所有 CBN 登录失败的唯一原因"
+    keywords:
+      - onGetTabCardsError
+      - loginParams
+      - oid=null
+      - caid=null
+    diagnose_commands:
+      - "grep -E 'onLoginSuccess|onLoginError' <logfile>"
+      - "grep 'loginParams' <logfile>"
+      - "grep -E 'onGetTabCardsError|HomeDataManager.*失败' <logfile>"
+
+  - id: case_002
+    name: CBN 登录成功 (有 Dongle)
+    file: case_002_cbn_login_success.md
+    keywords:
+      - onLoginSuccess
+      - onGetTabCards
+      - loginParams
+    diagnose_commands:
+      - "grep -E 'onLoginSuccess|onLoginError' <logfile>"
+      - "grep -E 'loginParams|login params' <logfile>"
+      - "grep -E 'onGetTabCards|GetTabCards.*200' <logfile>"
+
+  - id: case_002b
+    name: CBN 登录成功 (无 Dongle)
+    file: case_002b_cbn_login_success_no_dongle.md
+    note: "不接 USB Dongle 也可以成功登录 CBN，使用本地设备 ID 认证"
+    keywords:
+      - onLoginSuccess
+      - deviceAuthByLocalDevice
+      - onGetTabCards
+    diagnose_commands:
+      - "grep -E 'onLoginSuccess|onLoginError' <logfile>"
+      - "grep 'deviceAuthByLocalDevice' <logfile>"
+      - "grep -E 'onGetTabCards|GetTabCards.*200' <logfile>"

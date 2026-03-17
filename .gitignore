@@ -1,0 +1,60 @@
+# Logs (日志文件不上传，保留目录结构)
+logs/*.log
+logs/*.txt
+!logs/.gitkeep
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+ENV/
+env/
+.venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Logs (用户日志不上传)
+logs/*.log
+logs/*.txt
+
+# Reports (生成的报告不上传)
+reports/*.html
+
+# 临时文件
+*.tmp
+*.temp
+*.bak
+
+# 敏感信息
+*.key
+*.pem
+.env
+.env.local
