@@ -1,6 +1,14 @@
 # STB Log Analyzer
 
-Android 机顶盒 logcat 日志分析工具，用于诊断登录流程、模块故障等问题。
+机顶盒日志分析工具，支持 Android 和 Linux 平台，用于诊断登录流程、模块故障等问题。
+
+## 支持平台
+
+| 平台 | 说明 | 日志格式 |
+|------|------|----------|
+| **Android TV** | Android TV + homed APK | logcat 标准格式 |
+| **Android STB ROM** | Android 机顶盒 ROM + homed APK | logcat 带 TID 格式 |
+| **Linux STB** | Linux 机顶盒 + iPanel 中间件 | 自定义格式 |
 
 ---
 
@@ -28,6 +36,8 @@ AI: [自动运行分析脚本，生成诊断报告]
 
 ## 登录流程
 
+### Android 平台
+
 ```
 ┌─────────────────────────────────────────────┐
 │  1. Homed 平台登录 (前置条件)               │
@@ -42,6 +52,25 @@ AI: [自动运行分析脚本，生成诊断报告]
 ┌─────────────────────────────────────────────┐
 │  3. 首页数据加载                            │
 │     └─ onGetTabCards list.size:N           │
+└─────────────────────────────────────────────┘
+```
+
+### Linux STB 平台
+
+```
+┌─────────────────────────────────────────────┐
+│  1. Web 登录页加载                          │
+│     └─ login.php                           │
+└─────────────────────────────────────────────┘
+                    ↓
+┌─────────────────────────────────────────────┐
+│  2. Homed API 调用                          │
+│     └─ account/user/get_list → home_id     │
+└─────────────────────────────────────────────┘
+                    ↓
+┌─────────────────────────────────────────────┐
+│  3. 用户数据获取                            │
+│     └─ nick_name, device_id                │
 └─────────────────────────────────────────────┘
 ```
 
@@ -65,6 +94,15 @@ python stb-log-analyzer/scripts/pattern_matcher.py logs/xxx.log
 python stb-log-analyzer/scripts/pattern_matcher.py logs/xxx.log --module cbn
 python stb-log-analyzer/scripts/pattern_matcher.py logs/xxx.log --module homed
 python stb-log-analyzer/scripts/pattern_matcher.py logs/xxx.log --module dongle
+python stb-log-analyzer/scripts/pattern_matcher.py logs/xxx.log --module bluetooth
+
+# 按平台过滤
+python stb-log-analyzer/scripts/pattern_matcher.py logs/xxx.log --platform android_stb_rom
+python stb-log-analyzer/scripts/pattern_matcher.py logs/xxx.log --platform linux_stb
+
+# 按严重级别过滤
+python stb-log-analyzer/scripts/pattern_matcher.py logs/xxx.log --severity critical
+python stb-log-analyzer/scripts/pattern_matcher.py logs/xxx.log --severity error
 
 # 生成 HTML 报告
 python stb-log-analyzer/scripts/report_generator.py logs/xxx.log
@@ -142,6 +180,8 @@ STBLogAnalysis/
 1. **Dongle 与 CBN 登录无关** - 不接 Dongle 也可以成功登录 CBN
 2. **Homed 是前置条件** - CBN 登录前必须先完成 Homed 平台登录
 3. **时序很重要** - 按 PID 和时间戳关联事件
+4. **平台差异** - Linux STB 使用 Web 登录页，Android 使用 SDK 登录
+5. **自动检测** - 工具会自动检测日志平台类型并应用对应的分析规则
 
 ---
 

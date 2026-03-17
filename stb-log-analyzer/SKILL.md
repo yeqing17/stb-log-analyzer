@@ -1,11 +1,16 @@
 ---
 name: stb-log-analyzer
 description: |
-  机顶盒 (STB) 日志分析技能。分析 Android 机顶盒 logcat 日志，识别问题、分类故障并提供诊断建议。
+  机顶盒 (STB) 日志分析技能。分析 Android 和 Linux 机顶盒日志，识别问题、分类故障并提供诊断建议。
+
+  支持平台:
+  - Android TV (logcat 标准格式)
+  - Android STB ROM (logcat 带 TID 格式)
+  - Linux STB (iPanel 中间件)
 
   核心能力:
   - 登录流程分析 (Homed + CBN)
-  - 模块故障诊断
+  - 模块故障诊断 (蓝牙、音频、网络、HDMI 等)
   - 模式匹配与错误检测
   - 生成 HTML 分析报告
 ---
@@ -22,7 +27,9 @@ description: |
                           ↓
 ┌─────────────────────────────────────────────────────────┐
 │  2. 平台识别                                             │
-│     └─ Android logcat (默认) / Linux syslog             │
+│     ├─ Android TV logcat (标准格式)                      │
+│     ├─ Android STB ROM logcat (带TID格式)               │
+│     └─ Linux STB (iPanel 中间件)                        │
 └─────────────────────────────────────────────────────────┘
                           ↓
 ┌─────────────────────────────────────────────────────────┐
@@ -87,7 +94,11 @@ description: |
 | **Audio** | `audio_hw_primary`, `AudioTrack` | `modules/audio.md` |
 | **Network** | `NET_SDK`, `NetworkSpeedMonitor` | `modules/network.md` |
 | **HDMI** | `aml_hal_core_detect`, `tvhalServer` | `modules/hdmi.md` |
+| **Bluetooth** | `BluetoothAdapter`, `audiohalservice` | `keywords.yaml` |
+| **SELinux** | `avc: denied`, `SELinux` | `keywords.yaml` |
+| **HAL** | `HwcFbFreshfbHandle`, `HWComposer` | `keywords.yaml` |
 | **Crash** | `ANR in`, `*** Build fingerprint` | `errors/crash_patterns.md` |
+| **Linux STB** | `[tm=XXX][tid:XXX]`, `iPanel` | `platform/platform_diff.md` |
 
 ---
 
@@ -103,6 +114,11 @@ python stb-log-analyzer/scripts/pattern_matcher.py logs/xxx.log
 python stb-log-analyzer/scripts/pattern_matcher.py logs/xxx.log --module cbn
 python stb-log-analyzer/scripts/pattern_matcher.py logs/xxx.log --module homed
 python stb-log-analyzer/scripts/pattern_matcher.py logs/xxx.log --module dongle
+python stb-log-analyzer/scripts/pattern_matcher.py logs/xxx.log --module bluetooth
+
+# 按平台过滤
+python stb-log-analyzer/scripts/pattern_matcher.py logs/xxx.log --platform android_stb_rom
+python stb-log-analyzer/scripts/pattern_matcher.py logs/xxx.log --platform linux_stb
 
 # 按严重级别过滤
 python stb-log-analyzer/scripts/pattern_matcher.py logs/xxx.log --severity critical
@@ -197,3 +213,5 @@ grep -E "ANR in|*** Build fingerprint|FATAL EXCEPTION" <logfile>
 2. **Homed 是前置条件** - CBN 登录前必须先完成 Homed 平台登录
 3. **时序很重要** - 按 PID 和时间戳关联事件
 4. **多 PID 关联** - 不同 PID 的日志可能相关（如 2964 后台 vs 9378 前台）
+5. **平台差异** - Linux STB 使用 Web 登录页，Android 使用 SDK 登录
+6. **自动检测** - 工具会自动检测日志平台类型并应用对应的分析规则
