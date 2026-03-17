@@ -1,5 +1,12 @@
 # Keywords Configuration
 # 关键词配置 - 用于脚本自动匹配
+#
+# 平台说明:
+# - android_tv: Android TV + homed APK (标准logcat格式)
+# - android_stb_rom: Android 机顶盒 ROM + homed APK (带TID的logcat格式)
+# - linux_stb: Linux 机顶盒 + iPanel中间件
+#
+# platforms 字段可选，不设置则适用于所有平台
 
 # Homed 平台登录 (前置条件)
 # Launcher APK 启动后首先需要完成 Homed 平台登录
@@ -95,6 +102,7 @@ hdmi:
     - aml_hal_core_detect
     - tvhalServer
     - tvhal_client
+    - cec_hal
   patterns:
     - name: hdmi_plug_in
       regex: "HDMI.*plug in|status:plug in"
@@ -105,6 +113,12 @@ hdmi:
       regex: "HDMI.*plug out|status:plug out"
       severity: info
       description: "HDMI 设备断开"
+
+    - name: hdmi_cec_init
+      regex: "HdmiDrvClient.*Init ret"
+      severity: info
+      description: "HDMI CEC 初始化"
+      platforms: [android_stb_rom]
 
 # Audio
 audio:
@@ -123,6 +137,12 @@ audio:
       severity: error
       description: "音频失败"
 
+    - name: ao_error
+      regex: "ERROR-ao.*ERR:0x[0-9a-fA-F]+"
+      severity: error
+      description: "音频输出错误 (Linux STB)"
+      platforms: [linux_stb]
+
 # Network
 network:
   tags:
@@ -138,6 +158,99 @@ network:
       regex: "disconnect|disconnected"
       severity: warning
       description: "网络断开"
+
+# SELinux (Android STB ROM 特有)
+selinux:
+  tags:
+    - auditd
+    - SELinux
+  patterns:
+    - name: selinux_denied
+      regex: "avc:\\s*denied\\s+\\{[^}]+\\}"
+      severity: warning
+      description: "SELinux 权限拒绝"
+      platforms: [android_stb_rom, android_tv]
+
+    - name: selinux_permissive
+      regex: "permissive=1"
+      severity: info
+      description: "SELinux 宽容模式"
+      platforms: [android_stb_rom, android_tv]
+
+# HAL 层 (Android STB ROM 特有)
+hal:
+  tags:
+    - hwc
+    - HWComposer
+    - SurfaceFlinger
+    - hidisp
+  patterns:
+    - name: hwc_error
+      regex: "HwcFbFreshfbHandle is null"
+      severity: error
+      description: "显示缓冲区为空"
+      platforms: [android_stb_rom]
+
+    - name: hwc_composition_error
+      regex: "change composition type layer is empty"
+      severity: error
+      description: "图层合成错误"
+      platforms: [android_stb_rom]
+
+    - name: present_failed
+      regex: "presentAndGetReleaseFences.*present failed"
+      severity: error
+      description: "显示呈现失败"
+      platforms: [android_stb_rom]
+
+    - name: hidisp_init
+      regex: "hidisp.*open_display"
+      severity: info
+      description: "显示初始化"
+      platforms: [android_stb_rom]
+
+# Bluetooth 蓝牙模块
+bluetooth:
+  tags:
+    - BluetoothAdapter
+    - BluetoothManagerService
+    - audiohalservice
+    - wifi_bt
+  patterns:
+    - name: bt_binder_null
+      regex: "BluetoothAdapter.*Bluetooth binder is null"
+      severity: error
+      description: "蓝牙服务不可用 (binder为空)"
+
+    - name: bt_hal_not_found
+      regex: "Could not get passthrough implementation.*bluetooth"
+      severity: error
+      description: "蓝牙 HAL 实现获取失败"
+
+    - name: bt_audio_offload_fail
+      regex: "Could not register Bluetooth audio offload"
+      severity: warning
+      description: "蓝牙音频卸载注册失败"
+
+    - name: bt_class_not_found
+      regex: "Class not found for preloading.*[Bb]luetooth"
+      severity: warning
+      description: "蓝牙类预加载失败"
+
+    - name: bt_manifest_missing
+      regex: "Cannot find entry.*bluetooth.*in either framework or device manifest"
+      severity: warning
+      description: "蓝牙服务未在 manifest 中注册"
+
+    - name: bt_init_success
+      regex: "wifi_bt.*libbluetooth\\.so"
+      severity: info
+      description: "蓝牙库加载"
+
+    - name: bt_device_add
+      regex: "rtkbt_dev.*add"
+      severity: info
+      description: "蓝牙设备添加"
 
 # Crash
 crash:
@@ -174,6 +287,27 @@ performance:
       regex: "thermal.*(high|warning|throttle)"
       severity: warning
       description: "过热降频"
+
+# Linux STB 特有模式
+linux_stb:
+  patterns:
+    - name: mount_failed
+      regex: "mount.*failed"
+      severity: error
+      description: "挂载失败"
+      platforms: [linux_stb]
+
+    - name: porting_init
+      regex: "\\[I\\]\\[\\d+\\]\\[porting_\\w+_init"
+      severity: info
+      description: "端口初始化"
+      platforms: [linux_stb]
+
+    - name: breakpoint_debug
+      regex: "\\)\\s*:\\s*breakpoint!"
+      severity: info
+      description: "调试断点"
+      platforms: [linux_stb]
 
 # 案例索引
 cases:
