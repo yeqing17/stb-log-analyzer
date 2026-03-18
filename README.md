@@ -16,20 +16,19 @@
 
 ### 触发话术
 
-| 话术 | 说明 |
-|------|------|
-| `分析这个日志` / `分析 logs/xxx.log` | 完整分析 |
-| `检查登录情况` | 检查 Homed + CBN 登录状态 |
-| `CBN 登录成功了吗` | 重点检查 CBN 登录 |
-| `对比 a.log 和 b.log` | 对比两个日志差异 |
-| `生成网页版报告` | 生成 HTML 报告 |
+| 话术 | 分析范围 | 报告 |
+|------|----------|------|
+| `分析这个日志` / `看看有什么问题` | 全部模块 | ✅ |
+| `检查登录情况` / `CBN 登录成功了吗` | homed + cbn | ❌ |
+| `检查栏目加载` / `哪些栏目加载了` | cbn_columns | ❌ |
+| `生成报告` | (按需) | ✅ |
 
 ### 示例
 
 ```
 用户: 分析一下 logs/yqtest1.log 的登录情况
 
-AI: [自动运行分析脚本，生成诊断报告]
+AI: [只检查 homed + cbn 模块，输出文本摘要，不生成 HTML]
 ```
 
 ---
@@ -106,6 +105,9 @@ python stb-log-analyzer/scripts/pattern_matcher.py logs/xxx.log --severity error
 
 # 生成 HTML 报告
 python stb-log-analyzer/scripts/report_generator.py logs/xxx.log
+
+# CBN 栏目加载检测
+python stb-log-analyzer/scripts/cbn_columns_detector.py logs/xxx.log
 ```
 
 ---
@@ -121,6 +123,7 @@ STBLogAnalysis/
 │   ├── scripts/
 │   │   ├── pattern_matcher.py      # 模式匹配脚本
 │   │   ├── report_generator.py     # 报告生成脚本
+│   │   ├── cbn_columns_detector.py # CBN 栏目检测脚本
 │   │   └── config/keywords.yaml    # 模式配置
 │   ├── references/
 │   │   ├── modules/                # 模块知识库
@@ -135,43 +138,27 @@ STBLogAnalysis/
 
 ## 触发话术速查表
 
-### 完整分析
-| 话术 | 说明 |
-|------|------|
-| `分析这个日志` | 完整分析当前日志 |
-| `分析 logs/xxx.log` | 分析指定文件 |
-| `看看有什么问题` | 问题诊断 |
+### 按分析范围选择
 
-### 登录流程
-| 话术 | 说明 |
-|------|------|
-| `检查登录情况` | Homed + CBN 状态 |
-| `CBN 登录成功了吗` | CBN 登录检查 |
-| `国网登录有问题吗` | CBN 问题诊断 |
-| `Homed 登录正常吗` | Homed 检查 |
+| 话术 | 分析范围 | 生成报告 |
+|------|----------|----------|
+| `分析这个日志` / `看看有什么问题` | **全部模块** | ✅ 是 |
+| `检查登录情况` / `CBN 登录成功了吗` | homed + cbn | ❌ 否 |
+| `检查栏目加载` / `哪些栏目加载了` | cbn_columns | ❌ 否 |
+| `Dongle 状态怎么样` | dongle | ❌ 否 |
+| `音频有问题吗` | audio | ❌ 否 |
+| `网络正常吗` | network | ❌ 否 |
+| `HDMI 有问题吗` | hdmi | ❌ 否 |
+| `有崩溃吗` / `有 ANR 吗` | crash | ❌ 否 |
+| `蓝牙正常吗` | bluetooth | ❌ 否 |
+| `生成报告` / `生成网页版报告` | (基于上次或全部) | ✅ 是 |
+| `对比 a.log 和 b.log` | 对比分析 | 视情况 |
 
-### 模块检查
-| 话术 | 模块 |
-|------|------|
-| `Dongle 状态怎么样` | USB Dongle |
-| `音频有问题吗` | Audio |
-| `网络正常吗` | Network |
-| `HDMI 有问题吗` | HDMI |
-| `有崩溃吗` / `有 ANR 吗` | Crash |
+### 说明
 
-### 对比分析
-| 话术 | 说明 |
-|------|------|
-| `对比 a.log 和 b.log` | 对比两个日志 |
-| `和成功的日志有什么区别` | 差异分析 |
-| `找出失败原因` | 问题定位 |
-
-### 生成报告
-| 话术 | 说明 |
-|------|------|
-| `生成报告` | 生成 HTML 报告 |
-| `生成网页版报告` | 同上 |
-| `导出分析报告` | 同上 |
+- **单一模块检查**: 直接输出文本摘要，不生成 HTML
+- **全面分析**: 输出摘要 + 生成 HTML 报告
+- **用户要求报告**: 生成 HTML 报告
 
 ---
 
