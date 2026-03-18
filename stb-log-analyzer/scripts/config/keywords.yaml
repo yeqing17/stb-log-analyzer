@@ -70,6 +70,45 @@ cbn:
       severity: info
       description: "TabCards 数据获取成功"
 
+# CBN 栏目加载检测 (扩展模块)
+# 用于分析日志中加载了哪些国网栏目
+cbn_columns:
+  tags:
+    - CBN_UI_SDK
+    - HomeDataManager
+    - GwPortalFragment
+    - HomeContentFragment
+  patterns:
+    - name: column_cache_load
+      regex: "读取缓存的page\\s+(\\S+)\\s+成功"
+      severity: info
+      description: "栏目缓存加载成功"
+
+    - name: column_use_cache
+      regex: "使用本地缓存:\\s*(\\S+)"
+      severity: info
+      description: "使用本地缓存栏目"
+
+    - name: column_tabcards
+      regex: "onGetTabCards list\\.size:(\\d+)"
+      severity: info
+      description: "栏目卡片数量"
+
+    - name: column_switch
+      regex: "setUserVisibleHint isVisibleToUser = true.*tabId\\s*=\\s*(\\S+)"
+      severity: info
+      description: "栏目切换显示"
+
+    - name: column_resume
+      regex: "HomeContentFragment onResume.*tabId\\s*:\\s*(\\S+)"
+      severity: info
+      description: "栏目恢复显示"
+
+    - name: column_fragment_create
+      regex: "createFragment.*es_tabId=(\\S+)&"
+      severity: info
+      description: "栏目 Fragment 创建"
+
 # USB Dongle (独立模块，与 CBN 登录无直接关联)
 dongle:
   tags:

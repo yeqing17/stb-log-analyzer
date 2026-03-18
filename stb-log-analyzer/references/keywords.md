@@ -107,6 +107,54 @@ grep -E "onGetTabCardsError|HomeDataManager.*失败" <logfile>
 
 ---
 
+## CBN 栏目加载检测 (扩展模块)
+
+> 用于分析日志中加载了哪些国网栏目，显示 Tab ID、名称、数据来源等信息。
+
+### 关键日志标签
+
+| 标签 | 含义 |
+|------|------|
+| `CBN_UI_SDK` | 国网 UI SDK |
+| `HomeDataManager` | 首页数据管理 |
+| `GwPortalFragment` | 国网门户 Fragment |
+| `HomeContentFragment` | 首页内容 Fragment |
+
+### 栏目加载模式
+
+| 模式 | 级别 | 含义 |
+|------|------|------|
+| `读取缓存的page\s+(\S+)\s+成功` | Info | 栏目缓存加载成功，捕获 Tab ID |
+| `使用本地缓存:\s*(\S+)` | Info | 使用本地缓存栏目，捕获 Tab ID |
+| `onGetTabCards list\.size:(\d+)` | Info | 栏目卡片数量，捕获数量 |
+| `setUserVisibleHint isVisibleToUser = true.*tabId\s*=\s*(\S+)` | Info | 栏目切换显示，捕获 Tab ID |
+| `HomeContentFragment onResume.*tabId\s*:\s*(\S+)` | Info | 栏目恢复显示，捕获 Tab ID |
+| `createFragment.*es_tabId=(\S+)&` | Info | 栏目 Fragment 创建，捕获 Tab ID |
+
+### 诊断命令
+
+```bash
+# 1. 查看所有加载的栏目
+grep -E "读取缓存的page|使用本地缓存|onGetTabCards" <logfile>
+
+# 2. 查看栏目切换
+grep -E "setUserVisibleHint isVisibleToUser = true|HomeContentFragment onResume" <logfile>
+
+# 3. 综合栏目加载信息
+grep -E "tabId|TabCards|page.*成功|本地缓存" <logfile> | grep -v "tabId = null"
+```
+
+### 输出字段说明
+
+| 字段 | 说明 | 示例 |
+|------|------|------|
+| Tab ID | 栏目标识 | XJjingxuan, XJdianying |
+| 名称 | 栏目名称 | 新疆精选, 新疆电影 |
+| 数量 | 卡片数量 | 16, 26 |
+| 来源 | 数据来源 | 本地缓存 / API |
+
+---
+
 ## USB Dongle (独立模块)
 
 > **注意**: Dongle 检查与 CBN 登录成功/失败无直接关联。不接 Dongle 也可以成功登录 CBN。
