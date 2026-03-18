@@ -17,6 +17,12 @@ from datetime import datetime
 from pathlib import Path
 from enum import Enum
 
+# 导入国网栏目检测器
+try:
+    from cbn_columns_detector import CBNColumnsDetector
+except ImportError:
+    CBNColumnsDetector = None
+
 
 class PlatformType(Enum):
     ANDROID_TV = "android_tv"
@@ -379,6 +385,15 @@ def generate_html_report(log_path, output_path=None):
         module_stats[mod] = module_stats.get(mod, 0) + 1
         severity_stats[sev] = severity_stats.get(sev, 0) + 1
 
+    # 检测国网栏目
+    columns_data = None
+    if CBNColumnsDetector and platform != PlatformType.LINUX_STB:
+        try:
+            detector = CBNColumnsDetector(str(log_path))
+            columns_data = detector.detect()
+        except Exception as e:
+            print(f"Warning: CBN columns detection failed: {e}")
+
     # 确定整体状态 (根据平台不同判断)
     if platform == PlatformType.LINUX_STB:
         all_success = (
@@ -402,7 +417,8 @@ def generate_html_report(log_path, output_path=None):
         pattern_matches=pattern_matches,
         module_stats=module_stats,
         severity_stats=severity_stats,
-        all_success=all_success
+        all_success=all_success,
+        columns_data=columns_data
     )
 
     # 输出路径
@@ -417,7 +433,7 @@ def generate_html_report(log_path, output_path=None):
     return output_path
 
 
-def generate_full_html(log_path, platform, login_results, pattern_matches, module_stats, severity_stats, all_success):
+def generate_full_html(log_path, platform, login_results, pattern_matches, module_stats, severity_stats, all_success, columns_data=None):
     """生成完整的 HTML 报告"""
 
     summary_color = 'success' if all_success else 'error'
@@ -447,6 +463,9 @@ def generate_full_html(log_path, platform, login_results, pattern_matches, modul
 
     # 生成问题列表
     issues_html = generate_issues(pattern_matches, login_results)
+
+    # 生成国网栏目检测部分
+    columns_html = generate_columns_section(columns_data) if columns_data else ''
 
     # 生成结论
     conclusion_html = generate_conclusion(login_results, all_success)
@@ -708,6 +727,8 @@ def generate_full_html(log_path, platform, login_results, pattern_matches, modul
                 </table>
             </div>
         </div>
+
+        {columns_html}
 
         <!-- Issues -->
         <div class="card">
@@ -1091,6 +1112,124 @@ def generate_conclusion(login_results, all_success):
                     <strong>相关案例:</strong> <code>case_001_cbn_login_fail.md</code>
                 </div>
             '''
+
+
+def generate_columns_section(columns_data):
+    """生成国网栏目检测部分的 HTML"""
+    if not columns_data:
+        return ''
+
+    cbn_columns, homed_labels = columns_data
+
+    if not cbn_columns and not homed_labels:
+        return ''
+
+    # 生成 CBN SDK 栏目表格
+    cbn_rows = []
+    for tab_id, info in cbn_columns.items():
+        count = str(info.card_count) if info.card_count else '-'
+        source = '本地缓存' if info.source == 'cache' else 'API'
+        source_class = 'success' if info.source == 'cache' else 'info'
+        cbn_rows.append(f'''
+            <tr>
+                <td><code>{tab_id}</code></td>
+                <td>{count}</td>
+                <td><span class="status-badge {source_class}">{source}</span></td>
+                <td>{info.timestamp or '-'}</td>
+            </tr>
+        ''')
+
+    cbn_table = ''
+    if cbn_rows:
+        cbn_table = f'''
+        <h4 style="margin-bottom: 12px;">📺 CBN SDK 栏目</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th>Tab ID</th>
+                    <th>卡片数</th>
+                    <th>数据来源</th>
+                    <th>时间</th>
+                </tr>
+            </thead>
+            <tbody>
+                {"".join(cbn_rows)}
+            </tbody>
+        </table>
+        '''
+
+    # 生成 Homed Label 表格
+    homed_rows = []
+    empty_count = 0
+    for label_id, info in homed_labels.items():
+        name = info.label_name or '-'
+        if info.has_data:
+            status = '<span class="status-badge success">✓ 有数据</span>'
+        else:
+            status = '<span class="status-badge error">✗ 空数据</span>'
+            empty_count += 1
+        homed_rows.append(f'''
+            <tr>
+                <td>{label_id}</td>
+                <td>{name}</td>
+                <td>{status}</td>
+                <td>{info.timestamp or '-'}</td>
+            </tr>
+        ''')
+
+    homed_table = ''
+    if homed_rows:
+        homed_table = f'''
+        <h4 style="margin: 20px 0 12px;">📡 Homed Label 栏目</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th>Label ID</th>
+                    <th>名称</th>
+                    <th>数据状态</th>
+                    <th>时间</th>
+                </tr>
+            </thead>
+            <tbody>
+                {"".join(homed_rows)}
+            </tbody>
+        </table>
+        '''
+
+    # 统计信息
+    stats_html = ''
+    if cbn_columns or homed_labels:
+        stats_html = f'''
+        <div class="metrics" style="margin-top: 16px;">
+            <div class="metric-card">
+                <div class="metric-value info">{len(cbn_columns)}</div>
+                <div class="metric-label">CBN 栏目</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value info">{len(homed_labels)}</div>
+                <div class="metric-label">Homed Label</div>
+            </div>
+        '''
+        if empty_count > 0:
+            stats_html += f'''
+            <div class="metric-card">
+                <div class="metric-value error">{empty_count}</div>
+                <div class="metric-label">空数据</div>
+            </div>
+            '''
+        stats_html += '</div>'
+
+    return f'''
+        <!-- CBN Columns -->
+        <div class="card">
+            <div class="card-header">📺 国网栏目加载检测</div>
+            <div class="card-body">
+                {cbn_table}
+                {homed_table}
+                {stats_html}
+            </div>
+        </div>
+    '''
 
 
 def main():

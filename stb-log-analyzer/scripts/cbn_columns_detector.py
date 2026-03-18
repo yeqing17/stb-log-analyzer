@@ -50,7 +50,7 @@ class CBNColumnsDetector:
         'tabcards': re.compile(r'onGetTabCards list\.size:(\d+)'),
         'tab_switch': re.compile(r'setUserVisibleHint isVisibleToUser = true.*tabId\s*=\s*(\S+)'),
         'tab_resume': re.compile(r'HomeContentFragment onResume.*tabId\s*:\s*(\S+)'),
-        'fragment_create': re.compile(r'createFragment.*es_tabId=(\S+)&'),
+        'fragment_create': re.compile(r'es_tabId=(\S+?)(?:&|$)'),
     }
 
     # Homed Label 模式
@@ -108,6 +108,10 @@ class CBNColumnsDetector:
         """处理 CBN 栏目匹配"""
         tab_id = match.group(1).rstrip(',')
 
+        # 过滤 null tabId
+        if tab_id == 'null':
+            return
+
         if pattern_name == 'cache_load':
             if tab_id not in self.cbn_columns:
                 self.cbn_columns[tab_id] = ColumnInfo(tab_id=tab_id)
@@ -132,10 +136,16 @@ class CBNColumnsDetector:
                 self.cbn_columns[tab_id] = ColumnInfo(tab_id=tab_id)
             self.current_tab_id = tab_id
 
+        elif pattern_name == 'fragment_create':
+            if tab_id not in self.cbn_columns:
+                self.cbn_columns[tab_id] = ColumnInfo(tab_id=tab_id)
+            self.cbn_columns[tab_id].source = "API"
+            self.current_tab_id = tab_id
+
     def _process_homed_match(self, pattern_name: str, match, line: str, line_num: int, timestamp: Optional[str]):
         """处理 Homed Label 匹配"""
         if pattern_name == 'label_name':
-            name = match.group(1)
+            name = match.group(1).rstrip(',')
             label_id = match.group(2)
             self.tab_name_map[label_id] = name
 
@@ -154,7 +164,7 @@ class CBNColumnsDetector:
             self.pending_label = match.group(1)
 
         elif pattern_name == 'patchwall_response':
-            name = match.group(1)
+            name = match.group(1).rstrip(',')
             label_id = match.group(2)
             if label_id not in self.homed_labels:
                 self.homed_labels[label_id] = HomedLabelInfo(label_id=label_id)
@@ -169,7 +179,7 @@ class CBNColumnsDetector:
 
         elif pattern_name == 'empty_result':
             # 直接从结果行提取 label 信息
-            name = match.group(1)
+            name = match.group(1).rstrip(',')
             label_id = match.group(2)
             if label_id in self.homed_labels:
                 self.homed_labels[label_id].label_name = name
