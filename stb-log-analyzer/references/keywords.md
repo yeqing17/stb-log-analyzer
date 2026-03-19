@@ -305,6 +305,81 @@ grep -E "Load:|CPU temperatures|skipped.*frames|throttle" <logfile>
 
 ---
 
+## ICC 快速切台
+
+用于分析 **ICC流+UDP流** 快速切台时 PTS 时间戳异常导致无法切换的问题。
+
+### 触发场景
+
+- "快速切台问题"
+- "只播ICC"
+- "没有切换UDP"
+- "没有快速切台"
+- "ICC切换问题"
+- "频道切换失败"
+
+### 日志标签
+
+- `mplayer-jni`
+- `ilocal_icclive_player`
+
+### 模式
+
+| 模式 | 级别 | 含义 |
+|------|------|------|
+| `find a iframe!pts=(\d+)!!icc_first_pts=(\d+)` | Info | ICC 切台 PTS 信息 |
+| `ilocal_icclive_player.*error` | Error | ICC 播放器错误 |
+| `getAllChannels chnl_name=([^,]+), chnl_num=(\d+)` | Info | 频道信息 |
+
+### 关键日志格式
+
+```
+find a iframe!pts=<UDP流PTS>!!icc_first_pts=<ICC流PTS>,first_get_block_system_time=<时间> ms,now:<时间> ms
+```
+
+### PTS 差值判断
+
+| 差值范围 (UDP - ICC) | 状态 | 说明 |
+|---------------------|------|------|
+| ±50000 (±500ms) | 正常 | 可以正常切换到 UDP |
+| ±50000 ~ ±500000 | 警告 | 切换可能延迟 |
+| > ±500000 | **异常** | **无法切换，只播 ICC** |
+
+### 典型故障
+
+```
+find a iframe!pts=60323127!!icc_first_pts=89618269,...
+```
+
+- UDP流 PTS: 60,323,127
+- ICC流 PTS: 89,618,269
+- 差值: ~2900万单位 (~325秒) → **只播ICC，无法切换UDP**
+
+### 频道信息
+
+```
+getAllChannels chnl_name=CCTV-1高清, chnl_num=1serviceId=101,channelid:4200000953
+```
+
+### 诊断命令
+
+```bash
+# 提取 ICC PTS 信息
+grep "find a iframe.*pts=.*icc_first_pts" <logfile>
+
+# 提取频道列表
+grep "getAllChannels" <logfile> | head -20
+
+# 使用模块分析
+python stb-log-analyzer/scripts/pattern_matcher.py <logfile> --module icc_switch
+```
+
+### 参考文档
+
+- `references/modules/icc_switch.md` - 详细分析指南
+
+---
+
 ## 案例关键词索引
 
 | 案例 | 名称 | 关键词 | 说明 |

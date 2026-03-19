@@ -1,7 +1,7 @@
 ---
 name: stb-log-analyzer
 description: |
-  机顶盒 (STB) 日志分析技能。当用户说 "分析这个日志"、"分析 logs/xxx.log"、"检查登录情况"、"CBN 登录成功了吗"、"Homed 登录正常吗"、"检查栏目加载"、"哪些栏目加载了"、"生成报告"、"对比 a.log 和 b.log"、"看看有什么问题" 时使用此技能。支持 Android TV、Android STB ROM、Linux STB 三种平台，提供登录流程分析、模块故障诊断、CBN 栏目检测、HTML 报告生成。
+  机顶盒 (STB) 日志分析技能。当用户说 "分析这个日志"、"分析 logs/xxx.log"、"检查登录情况"、"CBN 登录成功了吗"、"Homed 登录正常吗"、"检查栏目加载"、"哪些栏目加载了"、"快速切台问题"、"只播ICC"、"没有切换UDP"、"没有快速切台"、"ICC切换问题"、"频道切换失败"、"生成报告"、"对比 a.log 和 b.log"、"看看有什么问题" 时使用此技能。支持 Android TV、Android STB ROM、Linux STB 三种平台，提供登录流程分析、模块故障诊断、CBN 栏目检测、ICC快速切台分析（ICC流+UDP流切换）、HTML 报告生成。
 ---
 
 # STB Log Analyzer - 技能定义
@@ -25,6 +25,7 @@ description: |
 | "分析日志" / "看看有什么问题" | 全部模块 | ✅ 是 |
 | "检查登录情况" / "CBN 登录成功了吗" | homed + cbn | ❌ 否 |
 | "检查栏目加载" / "哪些栏目加载了" | cbn_columns | ❌ 否 |
+| "快速切台问题" / "只播ICC" / "没有切换UDP" / "没有快速切台" / "ICC切换问题" / "频道切换失败" | icc_switch | ❌ 否 |
 | "Dongle 状态怎么样" | dongle | ❌ 否 |
 | "音频有问题吗" | audio | ❌ 否 |
 | "网络正常吗" | network | ❌ 否 |
@@ -92,6 +93,7 @@ python scripts/report_generator.py <logfile>
 | **homed** | `--module homed` | `ServiceHelper`, `StbApp` |
 | **cbn** | `--module cbn` | `GwSDK`, `CBN_UI_SDK` |
 | **cbn_columns** | `cbn_columns_detector.py` | `HomeDataManager`, `GwPortalFragment` |
+| **icc_switch** | `--module icc_switch` | `mplayer-jni`, `ilocal_icclive_player` |
 | **dongle** | `--module dongle` | `DongleManager`, `DongleProtocol` |
 | **bluetooth** | `--module bluetooth` | `BluetoothAdapter`, `audiohalservice` |
 | **audio** | `--module audio` | `audio_hw_primary`, `AudioTrack` |
@@ -116,7 +118,7 @@ python scripts/report_generator.py <logfile>
 
 | 目录 | 内容 |
 |------|------|
-| `references/modules/` | audio, network, hdmi, cbn_uisdk |
+| `references/modules/` | audio, network, hdmi, cbn_uisdk, icc_switch |
 | `references/errors/` | crash_patterns, performance |
 | `references/cases/` | case_001, case_002, case_002b |
 | `references/platform/` | platform_diff |

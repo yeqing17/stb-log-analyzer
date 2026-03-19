@@ -348,6 +348,29 @@ linux_stb:
       description: "调试断点"
       platforms: [linux_stb]
 
+# ICC 快速切台分析
+# 用于分析 ICC流+UDP流 快速切台时 PTS 时间戳异常导致无法切换的问题
+# 触发场景: 用户说"快速切台问题"、"只播ICC"、"没有切换UDP"、"没有快速切台"、"ICC切换问题"、"频道切换失败"
+icc_switch:
+  tags:
+    - mplayer-jni
+    - ilocal_icclive_player
+  patterns:
+    - name: icc_iframe_info
+      regex: "find a iframe!pts=(\\d+)!!icc_first_pts=(\\d+),first_get_block_system_time=(\\d+) ms,now:(\\d+) ms"
+      severity: info
+      description: "ICC切台PTS: UDP流PTS=$1, ICC流PTS=$2"
+
+    - name: icc_player_error
+      regex: "ilocal_icclive_player.*error|icc.*fail"
+      severity: error
+      description: "ICC 播放器错误"
+
+    - name: channel_info
+      regex: "getAllChannels chnl_name=([^,]+), chnl_num=(\\d+)serviceId=(\\d+),channelid:(\\d+)"
+      severity: info
+      description: "频道信息: $1 (频道号:$2, serviceId:$3, channelId:$4)"
+
 # 案例索引
 cases:
   - id: case_001
