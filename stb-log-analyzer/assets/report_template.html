@@ -6,306 +6,127 @@
     <title>日志分析报告 - {{filename}}</title>
     <style>
         :root {
-            --success: #10b981;
-            --error: #ef4444;
-            --warning: #f59e0b;
-            --info: #3b82f6;
-            --bg: #f8fafc;
-            --card: #ffffff;
-            --border: #e2e8f0;
-            --text: #1e293b;
-            --text-light: #64748b;
+            --primary: #1a2332;
+            --primary-light: #2a3647;
+            --accent: #2d8b8b;
+            --highlight: #a8dadc;
+            --text: #f1faee;
+            --text-dark: #c9d1d9;
+            --error: #ff6b6b;
+            --warning: #ffd93d;
+            --success: #6bcb77;
         }
-
         * { margin: 0; padding: 0; box-sizing: border-box; }
-
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            line-height: 1.6;
-            padding: 20px;
+            font-family: 'Microsoft YaHei', 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #1a2332 0%, #2a3647 100%);
+            min-height: 100vh; color: var(--text); line-height: 1.6; padding: 20px;
         }
-
-        .container { max-width: 1000px; margin: 0 auto; }
-
-        .header {
-            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
-            color: white;
-            padding: 30px;
-            border-radius: 12px;
-            margin-bottom: 24px;
-        }
-
-        .header h1 { font-size: 24px; margin-bottom: 8px; }
-        .header .meta { opacity: 0.9; font-size: 14px; }
-
-        .summary-box {
-            background: var(--card);
-            border: 2px solid var(--{{summary_color}});
-            border-radius: 12px;
-            padding: 24px;
-            margin-bottom: 24px;
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-
-        .summary-box .icon {
-            width: 48px; height: 48px;
-            background: var(--{{summary_color}});
-            border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 24px; color: white;
-        }
-
-        .summary-box .status {
-            font-size: 20px; font-weight: 600;
-            color: var(--{{summary_color}});
-        }
-
-        .card {
-            background: var(--card);
-            border-radius: 12px;
-            border: 1px solid var(--border);
-            margin-bottom: 24px;
-            overflow: hidden;
-        }
-
-        .card-header {
-            background: #f1f5f9;
-            padding: 16px 20px;
-            font-weight: 600;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .card-body { padding: 20px; }
-
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border); }
-        th { background: #f8fafc; font-weight: 600; font-size: 13px; color: var(--text-light); }
-        tr:last-child td { border-bottom: none; }
-
-        .status-badge {
-            display: inline-flex; align-items: center; gap: 6px;
-            padding: 4px 12px; border-radius: 20px;
-            font-size: 13px; font-weight: 500;
-        }
-        .status-badge.success { background: #dcfce7; color: #166534; }
-        .status-badge.error { background: #fee2e2; color: #991b1b; }
-        .status-badge.warning { background: #fef3c7; color: #92400e; }
-        .status-badge.info { background: #dbeafe; color: #1e40af; }
-
-        .flow-diagram {
-            display: flex; align-items: center; justify-content: center;
-            gap: 8px; flex-wrap: wrap;
-            padding: 20px; background: #f8fafc; border-radius: 8px;
-        }
-
-        .flow-step {
-            background: white; border: 2px solid var(--border);
-            padding: 12px 20px; border-radius: 8px; text-align: center;
-        }
-        .flow-step.success { border-color: var(--success); background: #f0fdf4; }
-        .flow-step.error { border-color: var(--error); background: #fef2f2; }
-        .flow-arrow { color: var(--text-light); font-size: 20px; }
-
-        .timeline { position: relative; padding-left: 24px; }
-        .timeline::before {
-            content: ''; position: absolute;
-            left: 8px; top: 0; bottom: 0;
-            width: 2px; background: var(--border);
-        }
-
-        .timeline-item { position: relative; padding-bottom: 16px; }
-        .timeline-item::before {
-            content: ''; position: absolute;
-            left: -20px; top: 6px;
-            width: 10px; height: 10px; border-radius: 50%;
-            background: var(--info); border: 2px solid white;
-        }
-        .timeline-item.success::before { background: var(--success); }
-        .timeline-item.error::before { background: var(--error); }
-        .timeline-item.warning::before { background: var(--warning); }
-
-        .timeline-time { font-family: monospace; font-size: 13px; color: var(--text-light); }
-        .timeline-event { font-weight: 500; }
-        .timeline-stage {
-            font-size: 12px; color: var(--text-light);
-            background: #f1f5f9; padding: 2px 8px; border-radius: 4px;
-        }
-
-        .log-block {
-            background: #1e293b; color: #e2e8f0;
-            padding: 16px; border-radius: 8px;
-            font-family: 'SF Mono', Monaco, monospace; font-size: 13px;
-            overflow-x: auto; white-space: pre-wrap;
-        }
-        .log-block .line-num { color: #64748b; }
-        .log-block .highlight { color: #fbbf24; }
-
-        .metrics {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 16px;
-        }
-        .metric-card {
-            background: #f8fafc; border-radius: 8px;
-            padding: 16px; text-align: center;
-        }
-        .metric-value { font-size: 24px; font-weight: 700; color: var(--info); }
-        .metric-label { font-size: 13px; color: var(--text-light); margin-top: 4px; }
-
-        .note {
-            background: #fef3c7; border-left: 4px solid var(--warning);
-            padding: 12px 16px; border-radius: 0 8px 8px 0; margin-top: 16px;
-        }
-        .note.info { background: #dbeafe; border-color: var(--info); }
-        .note.success { background: #dcfce7; border-color: var(--success); }
-        .note-title { font-weight: 600; margin-bottom: 4px; }
-
-        .issue-item {
-            background: #fef2f2; border-left: 4px solid var(--error);
-            padding: 16px; border-radius: 0 8px 8px 0; margin-bottom: 16px;
-        }
-        .issue-item.warning { background: #fffbeb; border-color: var(--warning); }
-        .issue-title { font-weight: 600; margin-bottom: 8px; }
-
-        .footer {
-            text-align: center; padding: 20px;
-            color: var(--text-light); font-size: 13px;
-        }
-
-        code {
-            background: #f1f5f9; padding: 2px 6px;
-            border-radius: 4px; font-family: monospace; font-size: 13px;
+        .container { max-width: 1100px; margin: 0 auto; background: var(--primary); border-radius: 15px; box-shadow: 0 15px 50px rgba(0,0,0,0.5); overflow: hidden; }
+        header { background: linear-gradient(135deg, var(--accent) 0%, #1f6b6b 100%); padding: 30px 40px; }
+        header h1 { font-size: 1.8em; color: var(--text); margin-bottom: 8px; }
+        .meta { display: flex; flex-wrap: wrap; gap: 15px; margin-top: 15px; font-size: 0.9em; color: var(--highlight); }
+        .meta span { background: rgba(255,255,255,0.1); padding: 6px 14px; border-radius: 20px; }
+        .content { padding: 30px 40px; }
+        h2 { font-size: 1.4em; color: var(--highlight); margin: 30px 0 15px; padding-bottom: 8px; border-bottom: 2px solid var(--accent); }
+        h2:first-child { margin-top: 0; }
+        h3 { font-size: 1.15em; color: var(--accent); margin: 20px 0 10px; }
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin: 20px 0; }
+        .card { background: var(--primary-light); border-radius: 10px; padding: 20px; text-align: center; border: 1px solid var(--accent); }
+        .card .num { font-size: 2em; font-weight: bold; color: var(--highlight); }
+        .card .label { font-size: 0.85em; color: var(--text-dark); margin-top: 5px; }
+        .card.error .num { color: var(--error); }
+        .card.warning .num { color: var(--warning); }
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; background: var(--primary-light); border-radius: 8px; overflow: hidden; font-size: 0.9em; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--accent); }
+        th { background: var(--accent); color: var(--primary); font-weight: 600; }
+        tr:hover td { background: rgba(45, 139, 139, 0.1); }
+        .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.8em; font-weight: 500; }
+        .badge-success { background: rgba(107,203,119,0.2); color: var(--success); }
+        .badge-error { background: rgba(255,107,107,0.2); color: var(--error); }
+        .badge-warning { background: rgba(255,217,61,0.2); color: var(--warning); }
+        .box { background: var(--primary-light); border-radius: 8px; padding: 18px; margin: 15px 0; border-left: 4px solid var(--accent); }
+        .box.error { border-left-color: var(--error); }
+        .box.warning { border-left-color: var(--warning); }
+        .box.success { border-left-color: var(--success); }
+        .box-title { font-weight: 600; color: var(--highlight); margin-bottom: 10px; font-size: 1.05em; }
+        .box.error .box-title { color: var(--error); }
+        .box.warning .box-title { color: var(--warning); }
+        .box.success .box-title { color: var(--success); }
+        code { background: var(--primary); padding: 2px 8px; border-radius: 4px; font-family: Consolas, monospace; font-size: 0.85em; color: var(--highlight); }
+        pre { background: var(--primary); border: 1px solid var(--accent); border-radius: 8px; padding: 15px; margin: 15px 0; overflow-x: auto; }
+        pre code { background: none; padding: 0; }
+        .pts-table { font-size: 0.85em; }
+        .pts-table td:nth-child(4) { font-weight: 600; }
+        .channel-info { background: rgba(45, 139, 139, 0.1); padding: 10px 15px; border-radius: 6px; margin: 10px 0; font-size: 0.9em; }
+        .channel-info strong { color: var(--highlight); }
+        footer { background: var(--primary-light); padding: 20px 40px; text-align: center; color: var(--text-dark); font-size: 0.85em; border-top: 1px solid var(--accent); }
+        @media (max-width: 768px) {
+            .content { padding: 20px; }
+            header { padding: 20px; }
+            table { font-size: 0.8em; }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Header -->
-        <div class="header">
-            <h1>📋 日志分析报告</h1>
+        <header>
+            <h1>日志分析报告</h1>
             <div class="meta">
-                <strong>文件:</strong> {{filename}} &nbsp;|&nbsp;
-                <strong>设备:</strong> {{device_info}} &nbsp;|&nbsp;
-                <strong>分析时间:</strong> {{analysis_time}}
+                <span><strong>文件:</strong> {{filename}}</span>
+                <span><strong>平台:</strong> {{platform}}</span>
+                <span><strong>分析时间:</strong> {{date}}</span>
             </div>
-        </div>
+        </header>
 
-        <!-- Summary -->
-        <div class="summary-box">
-            <div class="icon">{{summary_icon}}</div>
-            <div class="text">
-                <div class="status">{{summary_status}}</div>
-                <div style="color: var(--text-light); margin-top: 4px;">{{summary_detail}}</div>
+        <div class="content">
+            <!-- 摘要 -->
+            <h2>摘要</h2>
+            <p>{{summary}}</p>
+
+            <div class="summary-grid">
+                <div class="card error"><div class="num">{{critical_count}}</div><div class="label">Critical</div></div>
+                <div class="card error"><div class="num">{{error_count}}</div><div class="label">ERROR</div></div>
+                <div class="card warning"><div class="num">{{warning_count}}</div><div class="label">WARNING</div></div>
+                <div class="card"><div class="num">{{module_count}}</div><div class="label">问题模块</div></div>
             </div>
+
+            <!-- ICC 切台 PTS 分析 (如有) -->
+            <!-- {{icc_section}} -->
+
+            <!-- 登录流程 -->
+            <h2>登录流程检查</h2>
+            <table>
+                <tr><th>阶段</th><th>状态</th><th>关键日志</th></tr>
+                <tr><td>Homed 登录</td><td>{{homed_status}}</td><td><code>{{homed_log}}</code></td></tr>
+                <tr><td>CBN 初始化</td><td>{{cbn_init_status}}</td><td><code>GwSDK.initSDK</code></td></tr>
+                <tr><td>CBN 登录</td><td>{{cbn_login_status}}</td><td><code>{{cbn_login_log}}</code></td></tr>
+                <tr><td>频道数据</td><td>{{channel_status}}</td><td><code>{{channel_log}}</code></td></tr>
+            </table>
+
+            <!-- 其他问题 -->
+            <h2>其他问题</h2>
+            <!-- {{issues_section}} -->
+
+            <!-- 统计 -->
+            <h2>模块统计</h2>
+            <table>
+                <tr><th>模块</th><th>匹配数</th><th>模块</th><th>匹配数</th></tr>
+                <!-- {{module_stats}} -->
+            </table>
+
+            <!-- 诊断命令 -->
+            <h2>诊断命令</h2>
+            <pre><code># 模式匹配分析
+python stb-log-analyzer/scripts/pattern_matcher.py logs/{{filename}}
+
+# 按模块分析
+python stb-log-analyzer/scripts/pattern_matcher.py logs/{{filename}} --module icc_switch</code></pre>
         </div>
 
-        <!-- Login Flow -->
-        {{#login_flow_section}}
-        <div class="card">
-            <div class="card-header">🔐 登录流程检查</div>
-            <div class="card-body">
-                <div class="flow-diagram">
-                    {{flow_diagram}}
-                </div>
-
-                {{#login_table}}
-                <table style="margin-top: 20px;">
-                    <thead>
-                        <tr>
-                            <th>阶段</th>
-                            <th>状态</th>
-                            <th>关键日志</th>
-                            <th>详情</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {{login_rows}}
-                    </tbody>
-                </table>
-                {{/login_table}}
-            </div>
-        </div>
-        {{/login_flow_section}}
-
-        <!-- Timeline -->
-        {{#timeline_section}}
-        <div class="card">
-            <div class="card-header">⏱️ 时序分析</div>
-            <div class="card-body">
-                <div class="timeline">
-                    {{timeline_items}}
-                </div>
-
-                {{#metrics_section}}
-                <div class="metrics" style="margin-top: 20px;">
-                    {{metrics_items}}
-                </div>
-                {{/metrics_section}}
-            </div>
-        </div>
-        {{/timeline_section}}
-
-        <!-- Issues -->
-        {{#issues_section}}
-        <div class="card">
-            <div class="card-header">⚠️ 发现的问题</div>
-            <div class="card-body">
-                {{issues_items}}
-            </div>
-        </div>
-        {{/issues_section}}
-
-        <!-- Statistics -->
-        <div class="card">
-            <div class="card-header">📊 统计</div>
-            <div class="card-body">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>模块</th>
-                            <th>匹配数</th>
-                            <th>级别</th>
-                            <th>说明</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {{statistics_rows}}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Log Snippets -->
-        {{#log_snippets_section}}
-        <div class="card">
-            <div class="card-header">📝 关键日志片段</div>
-            <div class="card-body">
-                {{log_snippets}}
-            </div>
-        </div>
-        {{/log_snippets_section}}
-
-        <!-- Conclusion -->
-        <div class="card">
-            <div class="card-header">📝 结论</div>
-            <div class="card-body">
-                {{conclusion}}
-                {{#related_case}}
-                <div style="margin-top: 16px; padding: 12px; background: #f0fdf4; border-radius: 8px;">
-                    <strong>相关案例:</strong> <code>{{related_case}}</code>
-                </div>
-                {{/related_case}}
-            </div>
-        </div>
-
-        <!-- Footer -->
-        <div class="footer">
-            Generated by STB Log Analyzer | {{analysis_time}}
-        </div>
+        <footer>
+            <p>STB Log Analyzer - 机顶盒日志分析工具 | {{date}}</p>
+        </footer>
     </div>
 </body>
 </html>
